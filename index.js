@@ -1,46 +1,37 @@
+const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const axios = require('axios');
 
-const PORT = process.env.PORT || 10000;
-const API_URL = 'https://saobody-lopq.onrender.com/api/taixiu/sunwin';
-
-const server = http.createServer((req, res) => {
-  res.writeHead(200);
-  res.end('WebSocket Server is running');
-});
+const app = express();
+const server = http.createServer(app);
 
 const wss = new WebSocket.Server({ noServer: true });
 
 let clients = [];
 
 server.on('upgrade', (req, socket, head) => {
-  const pathname = req.url;
-
-  if (pathname === '/ws') {
-    wss.handleUpgrade(req, socket, head, (ws) => {
-      wss.emit('connection', ws, req);
-    });
-  } else {
-    socket.destroy();
-  }
-});
-
-wss.on('connection', (ws) => {
-  console.log('Client connected');
-  clients.push(ws);
-
-  ws.on('close', () => {
-    console.log('Client disconnected');
-    clients = clients.filter((client) => client !== ws);
+  wss.handleUpgrade(req, socket, head, (ws) => {
+    wss.emit('connection', ws, req);
   });
 });
 
-async function fetchDataAndBroadcast() {
-  try {
-    const { data } = await axios.get(API_URL);
+wss.on('connection', (ws, req) => {
+  const url = new URL(req.url, `https://${req.headers.host}`);
+  const id = url.searchParams.get('id');
+  const key = url.searchParams.get('key');
+  console.log(`Client connected: id=${id}, key=${key}`);
+  clients.push(ws);
 
-    if (Array.isArray(data) && data.length > 0) {
+  ws.on('close', () => {
+    clients = clients.filter(c => c !== ws);
+  });
+});
+
+async function broadcast() {
+  try {
+    const { data } = await axios.get('https://saobody-lopq.onrender.com/api/taixiu/sunwin');
+    if (Array.isArray(data) && data.length) {
       const latest = data[0];
       const payload = {
         phien: latest.session,
@@ -50,22 +41,20 @@ async function fetchDataAndBroadcast() {
         tong: latest.total,
         ket_qua: latest.result
       };
-
-      clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify(payload));
-        }
+      clients.forEach(c => {
+        if (c.readyState === WebSocket.OPEN) c.send(JSON.stringify(payload));
       });
-
       console.log('Broadcast:', payload);
     }
-  } catch (err) {
-    console.error('Fetch error:', err);
+  } catch (e) {
+    console.error('Fetch error', e);
   }
 }
 
-setInterval(fetchDataAndBroadcast, 3000);
+setInterval(broadcast, 3000);
 
-server.listen(PORT, () => {
-  console.log(`Server running on PORT ${PORT}`);
-});
+// Express fallback route
+app.get('/', (_req, res) => res.send('WebSocket server is running'));
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Listening on port ${PORT}`));
