@@ -20,7 +20,18 @@ wss.on('connection', (ws, req) => {
   const url = new URL(req.url, `https://${req.headers.host}`);
   const id = url.searchParams.get('id');
   const key = url.searchParams.get('key');
+  
   console.log(`Client connected: id=${id}, key=${key}`);
+
+  // Kiểm tra ID + KEY hợp lệ
+  if (id === 'binhtool90' && key === 'tuoilon') {
+    ws.isAuthorized = true;
+    console.log('✅ Authorized client');
+  } else {
+    ws.isAuthorized = false;
+    console.log('❌ Unauthorized client');
+  }
+
   clients.push(ws);
 
   ws.on('close', () => {
@@ -34,7 +45,7 @@ async function broadcast() {
 
     if (data && data.phien) {
       clients.forEach(c => {
-        if (c.readyState === WebSocket.OPEN) {
+        if (c.readyState === WebSocket.OPEN && c.isAuthorized) {
           c.send(JSON.stringify(data));
         }
       });
