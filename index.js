@@ -1,5 +1,5 @@
-const WebSocket = require('ws');
 const http = require('http');
+const WebSocket = require('ws');
 const axios = require('axios');
 
 const PORT = process.env.PORT || 10000;
@@ -10,11 +10,23 @@ const server = http.createServer((req, res) => {
   res.end('WebSocket Server is running');
 });
 
-const wss = new WebSocket.Server({ server, path: '/ws' });
+const wss = new WebSocket.Server({ noServer: true });
 
 let clients = [];
 
-wss.on('connection', (ws, req) => {
+server.on('upgrade', (req, socket, head) => {
+  const pathname = req.url;
+
+  if (pathname === '/ws') {
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      wss.emit('connection', ws, req);
+    });
+  } else {
+    socket.destroy();
+  }
+});
+
+wss.on('connection', (ws) => {
   console.log('Client connected');
   clients.push(ws);
 
@@ -55,5 +67,5 @@ async function fetchDataAndBroadcast() {
 setInterval(fetchDataAndBroadcast, 3000);
 
 server.listen(PORT, () => {
-  console.log(`Server is running on PORT: ${PORT}`);
+  console.log(`Server running on PORT ${PORT}`);
 });
