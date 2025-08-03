@@ -1,19 +1,21 @@
 const WebSocket = require('ws');
+const http = require('http');
 const axios = require('axios');
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 10000;
 const API_URL = 'https://saobody-lopq.onrender.com/api/taixiu/sunwin';
 
-const wss = new WebSocket.Server({ port: PORT });
+const server = http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end('WebSocket Server is running');
+});
+
+const wss = new WebSocket.Server({ server, path: '/ws' });
 
 let clients = [];
 
 wss.on('connection', (ws, req) => {
-  const urlParams = new URLSearchParams(req.url.slice(1)); // skip "/"
-  const id = urlParams.get('id') || 'UnknownID';
-  const key = urlParams.get('key') || 'NoKey';
-  console.log(`Client connected - ID: ${id}, Key: ${key}`);
-
+  console.log('Client connected');
   clients.push(ws);
 
   ws.on('close', () => {
@@ -52,4 +54,6 @@ async function fetchDataAndBroadcast() {
 
 setInterval(fetchDataAndBroadcast, 3000);
 
-console.log(`WebSocket Server is running on PORT: ${PORT}`);
+server.listen(PORT, () => {
+  console.log(`Server is running on PORT: ${PORT}`);
+});
