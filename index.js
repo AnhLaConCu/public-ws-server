@@ -53,8 +53,9 @@ async function broadcast() {
 
 setInterval(broadcast, 3000);
 
-// Express fallback route
 app.get('/', (_req, res) => res.send('WebSocket server is running'));
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Listening on port ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`Listening on port ${PORT}`);
+});
