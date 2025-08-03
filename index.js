@@ -31,20 +31,14 @@ wss.on('connection', (ws, req) => {
 async function broadcast() {
   try {
     const { data } = await axios.get('https://saobody-lopq.onrender.com/api/taixiu/sunwin');
-    if (Array.isArray(data) && data.length) {
-      const latest = data[0];
-      const payload = {
-        phien: latest.session,
-        xuc_xac_1: latest.dice[0],
-        xuc_xac_2: latest.dice[1],
-        xuc_xac_3: latest.dice[2],
-        tong: latest.total,
-        ket_qua: latest.result
-      };
+
+    if (data && data.phien) {
       clients.forEach(c => {
-        if (c.readyState === WebSocket.OPEN) c.send(JSON.stringify(payload));
+        if (c.readyState === WebSocket.OPEN) {
+          c.send(JSON.stringify(data));
+        }
       });
-      console.log('Broadcast:', payload);
+      console.log('Broadcast:', data);
     }
   } catch (e) {
     console.error('Fetch error', e);
