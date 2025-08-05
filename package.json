@@ -1,14 +1,16 @@
 {
-  "name": "taixiu-ws-render",
+  "name": "du-doan-taixiu",
   "version": "1.0.0",
-  "description": "WebSocket Server for Tài Xỉu on Render",
+  "description": "API dự đoán Tài/Xỉu từ dữ liệu JSON",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
+  "keywords": ["taixiu", "api", "md5", "nodejs"],
+  "author": "chatgpt+user",
+  "license": "MIT",
   "dependencies": {
-    "axios": "^1.6.8",
-    "express": "^4.18.2",
-    "ws": "^8.17.0"
+    "axios": "^1.6.0",
+    "express": "^4.18.2"
   }
 }
